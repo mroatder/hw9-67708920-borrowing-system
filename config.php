@@ -1,32 +1,37 @@
-<<<<<<< HEAD
 <?php
-// การตั้งค่าสำหรับเชื่อมต่อฐานข้อมูลใน Docker
-$host = 'db'; // ใช้ 'db' ตามชื่อ service ของฐานข้อมูลใน docker-compose.yml
-$dbname = 'borrowings_db'; // ชื่อฐานข้อมูลใหม่ที่คุณกำหนด
-$username = 'dev_user';
-$password = 'dev_password';
+/**
+ * ไฟล์เชื่อมต่อฐานข้อมูลสำหรับระบบยืม-คืน (Borrowing System)
+ * ปรับแต่งสำหรับใช้งานร่วมกับ Docker Compose
+ */
+
+// 1. กำหนดค่าการเชื่อมต่อ (ให้ตรงกับ service 'db' ใน docker-compose.yml)
+$host     = 'db';              // ชื่อ Service ของ Database ใน Docker
+$dbname   = 'borrowings_db';   // ชื่อ Database (ตรวจสอบให้ตรงกับ MYSQL_DATABASE)
+$username = 'dev_user';        // ชื่อ User (ตรวจสอบให้ตรงกับ MYSQL_USER)
+$password = 'dev_password';    // รหัสผ่าน (ตรวจสอบให้ตรงกับ MYSQL_PASSWORD)
+$charset  = 'utf8mb4';         // รองรับภาษาไทยและ Emoji
+
+// 2. กำหนด Data Source Name (DSN)
+$dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
+
+// 3. กำหนด Options เพิ่มเติมสำหรับ PDO
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // ให้พ่น Error ออกมาเมื่อคำสั่ง SQL ผิด
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       // ให้ดึงข้อมูลเป็น Array แบบชื่อคอลัมน์
+    PDO::ATTR_EMULATE_PREPARES   => false,                  // ใช้ Prepared Statements จริงเพื่อความปลอดภัย (SQL Injection)
+];
 
 try {
-    // สร้างการเชื่อมต่อฐานข้อมูลผ่าน PDO
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-} catch(PDOException $e) {
-    // หากเชื่อมต่อไม่สำเร็จ ให้แสดงข้อความแจ้งเตือน
-    die("Connection failed: " . $e->getMessage());
-}
-=======
-<?php
-$host = 'localhost'; 
-$dbname = 'equipment_borrowing';
-$username = 'root';
-$password = '';
+    // 4. เริ่มการเชื่อมต่อ
+    $pdo = new PDO($dsn, $username, $password, $options);
+    
+    // หากต้องการทดสอบว่าเชื่อมต่อได้ไหม (ตอนใช้งานจริงให้ลบบรรทัดล่างนี้ออก)
+    // echo "Database connection successful!"; 
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    // 5. จัดการกรณีเชื่อมต่อล้มเหลว
+    // บันทึก Log หรือแสดงข้อความ Error
+    error_log($e->getMessage());
+    die("ขออภัย: ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้ (" . $e->getMessage() . ")");
 }
->>>>>>> ecb252f2b7e08ec439c774aa96e416c78811174b
-?>
+

@@ -92,29 +92,6 @@ if (isset($_GET['get_deleted'])) {
 }
 
 // --- LOGIC: GET BORROWING DETAILS ---
-if (isset($_GET['get_borrowing']) && isset($_GET['id'])) {
-    $id = $_GET['id'];
-    
-    $stmt = $pdo->prepare("
-        SELECT b.*, e.name as equip_name, u.username as borrower_name, u.first_name as borrower_firstname, u.last_name as borrower_lastname
-        FROM borrowings b
-        JOIN equipment e ON b.equipment_id = e.id
-        JOIN users u ON b.user_id = u.id
-        WHERE b.id = ?
-    ");
-    $stmt->execute([$id]);
-    $borrowing = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($borrowing) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'borrowing' => $borrowing]);
-    } else {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูลการยืม']);
-    }
-    exit;
-}
-
 // --- LOGIC: AJAX FETCH BORROWINGS ---
 if (isset($_GET['ajax'])) {
     $search = isset($_GET['search']) ? "%" . $_GET['search'] . "%" : "%%";
@@ -129,7 +106,7 @@ if (isset($_GET['ajax'])) {
             FROM borrowings b
             JOIN equipment e ON b.equipment_id = e.id
             JOIN users u ON b.user_id = u.id
-            WHERE (e.name LIKE :search OR u.username LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search)";
+            WHERE (e.name LIKE :s1 OR u.username LIKE :s2 OR u.first_name LIKE :s3 OR u.last_name LIKE :s4)";
     
     if ($date_start != "") $sql .= " AND b.borrow_date >= :date_start";
     if ($date_end != "") $sql .= " AND b.borrow_date <= :date_end";
@@ -139,14 +116,22 @@ if (isset($_GET['ajax'])) {
     $sql .= " ORDER BY b.borrow_date DESC";
     
     $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':search', $search);
+    
+    // แก้ไข: ใช้ชื่อพารามิเตอร์ที่ต่างกันสำหรับแต่ละ LIKE
+    $stmt->bindValue(':s1', $search);
+    $stmt->bindValue(':s2', $search);
+    $stmt->bindValue(':s3', $search);
+    $stmt->bindValue(':s4', $search);
+
     if ($date_start != "") $stmt->bindValue(':date_start', $date_start);
     if ($date_end != "") $stmt->bindValue(':date_end', $date_end);
     if ($status != "") $stmt->bindValue(':status', $status);
     if ($approval_status != "") $stmt->bindValue(':approval_status', $approval_status);
-    $stmt->execute();
+    
+    $stmt->execute(); // บรรทัดนี้จะไม่ Error แล้ว
     
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // ... โค้ดที่เหลือเหมือนเดิม ...
     
     if (count($results) > 0) {
         foreach ($results as $row) {

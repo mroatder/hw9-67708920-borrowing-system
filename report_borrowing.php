@@ -19,25 +19,34 @@ if (isset($_GET['ajax'])) {
     $date_end = isset($_GET['date_end']) ? $_GET['date_end'] : "";
     $status = isset($_GET['status']) ? $_GET['status'] : "";
 
-    $sql = "SELECT b.*, e.name as equip_name, u.username as borrower_name, u.first_name as borrower_firstname, u.last_name as borrower_lastname,
-                   e.image as equip_image, e.quantity as equip_quantity
-            FROM borrowings b
-            JOIN equipment e ON b.equipment_id = e.id
-            JOIN users u ON b.user_id = u.id
-            WHERE (e.name LIKE :search OR u.username LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search)";
-    
-    if ($date_start != "") $sql .= " AND b.borrow_date >= :date_start";
-    if ($date_end != "") $sql .= " AND b.borrow_date <= :date_end";
-    if ($status != "") $sql .= " AND b.status = :status";
+    // --- แก้ไขส่วน SQL (บรรทัดที่ 26 เป็นต้นไป) ---
+$sql = "SELECT b.*, e.name as equip_name, u.username as borrower_name, u.first_name as borrower_firstname, u.last_name as borrower_lastname,
+               e.image as equip_image, e.quantity as equip_quantity
+        FROM borrowings b
+        JOIN equipment e ON b.equipment_id = e.id
+        JOIN users u ON b.user_id = u.id
+        WHERE (e.name LIKE :s1 OR u.username LIKE :s2 OR u.first_name LIKE :s3 OR u.last_name LIKE :s4)"; // เปลี่ยนชื่อ parameter ให้ต่างกัน
 
-    $sql .= " ORDER BY b.borrow_date DESC";
-    
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':search', $search);
-    if ($date_start != "") $stmt->bindValue(':date_start', $date_start);
-    if ($date_end != "") $stmt->bindValue(':date_end', $date_end);
-    if ($status != "") $stmt->bindValue(':status', $status);
-    $stmt->execute();
+if ($date_start != "") $sql .= " AND b.borrow_date >= :date_start";
+if ($date_end != "") $sql .= " AND b.borrow_date <= :date_end";
+if ($status != "") $sql .= " AND b.status = :status";
+
+$sql .= " ORDER BY b.borrow_date DESC";
+
+$stmt = $pdo->prepare($sql);
+
+// --- แก้ไขการ Bind Value (บรรทัดที่ 38 เป็นต้นไป) ---
+// ต้อง Bind ให้ครบทุกชื่อที่ประกาศไว้ใน SQL
+$stmt->bindValue(':s1', $search);
+$stmt->bindValue(':s2', $search);
+$stmt->bindValue(':s3', $search);
+$stmt->bindValue(':s4', $search);
+
+if ($date_start != "") $stmt->bindValue(':date_start', $date_start);
+if ($date_end != "") $stmt->bindValue(':date_end', $date_end);
+if ($status != "") $stmt->bindValue(':status', $status);
+
+$stmt->execute(); // บรรทัดที่ 40 จะไม่ Error แล้วครับ
     
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
